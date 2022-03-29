@@ -9,6 +9,7 @@
 import optparse
 import socket
 import connection
+import sys
 from constants import *
 
 
@@ -20,7 +21,7 @@ class Server(object):
 
     def __init__(self, addr=DEFAULT_ADDR, port=DEFAULT_PORT,
                  directory=DEFAULT_DIR):
-        print("Serving %s on %s:%s." % (directory, addr, port))
+        print(f"Serving {directory} on {addr}:{port}.")
         # FALTA: Crear socket del servidor, configurarlo, asignarlo
         # a una dirección y puerto, etc.
 
@@ -57,7 +58,7 @@ def main():
         port = int(options.port)
     except ValueError:
         sys.stderr.write(
-            "Numero de puerto invalido: %s\n" % repr(options.port))
+            f"Numero de puerto invalido: {repr(options.port)}\n")
         parser.print_help()
         sys.exit(1)
 

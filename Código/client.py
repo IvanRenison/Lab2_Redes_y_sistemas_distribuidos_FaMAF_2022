@@ -55,8 +55,7 @@ class Client(object):
         self.s.settimeout(timeout)
         message += EOL  # Completar el mensaje con un fin de línea
         while message:
-            logging.debug("Enviando el (resto del) mensaje %s."
-                          % repr(message))
+            logging.debug(f"Enviando el (resto del) mensaje {repr(message)}.")
             bytes_sent = self.s.send(message.encode("ascii"))
             assert bytes_sent > 0
             message = message[bytes_sent:]
@@ -157,7 +156,7 @@ class Client(object):
         Obtiene en el server el tamaño del archivo con el nombre dado.
         Devuelve None en caso de error.
         """
-        self.send('get_metadata %s' % filename)
+        self.send(f'get_metadata {filename}')
         self.status, message = self.read_response_line()
         if self.status == CODE_OK:
             size = int(self.read_line())
@@ -192,8 +191,9 @@ class Client(object):
         elif self.status == FILE_NOT_FOUND:
             logging.info("El archivo solicitado no existe.")
         else:
-            logging.warning("No se pudo obtener el archivo %s (code=%s)."
-                            % (filename, self.status))
+            logging.warning(
+                f"No se pudo obtener el archivo {filename} (code={self.status})."
+            )
 
 
 def main():
@@ -228,8 +228,8 @@ def main():
         parser.print_help()
         sys.exit(1)
 
-    # Setar verbosidad
-    code_level = DEBUG_LEVELS.get(options.level)  # convertir el str en codigo
+    # Setear verbosidad
+    code_level = DEBUG_LEVELS.get(options.level)  # convertir el str en código
     logging.getLogger().setLevel(code_level)
 
     try:

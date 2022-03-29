@@ -25,11 +25,11 @@ class TestBase(unittest.TestCase):
     # Entorno de testing ...
     def setUp(self):
         print("\nIn method %s:" % self._testMethodName)
-        os.system('rm -rf %s' % DATADIR)
+        os.system(f'rm -rf {DATADIR}')
         os.mkdir(DATADIR)
 
     def tearDown(self):
-        os.system('rm -rf %s' % DATADIR)
+        os.system(f'rm -rf {DATADIR}')
         if hasattr(self, 'client'):
             if self.client.connected:
                 # Deshabilitar el logging al desconectar
