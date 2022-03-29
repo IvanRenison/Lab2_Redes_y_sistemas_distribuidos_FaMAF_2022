@@ -14,12 +14,17 @@ class Connection(object):
     que termina la conexión.
     """
 
-    def __init__(self, socket, directory):
-        # FALTA: Inicializar atributos de Connection
-        pass
+    def __init__(self, socket : socket.socket, directory : str):
+        self.socket = socket
+        self.directory = directory
 
     def handle(self):
         """
         Atiende eventos de la conexión hasta que termina.
         """
         pass
+
+
+
+
+
