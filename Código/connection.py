@@ -76,12 +76,8 @@ class Connection(object):
         """
         response = __mk_code(CODE_OK)
 
-        try:
-            for dir in os.listdir(self.directory):
-                response += f"{dir}{EOL}"
-        except:
-            print('INTERNAL SERVER ERROR')
-            return __mk_code(INTERNAL_ERROR)
+        for dir in os.listdir(self.directory):
+            response += f"{dir}{EOL}"
 
         return response
     
@@ -98,12 +94,8 @@ class Connection(object):
             return __mk_code(INVALID_ARGUMENTS)
 
         else:
-            try:
-                data = os.path.getsize(os.path.join(self.directory, filename))
-                response += f"{str(data)}{EOL}"
-            except:
-                print('INTERNAL SERVER ERROR')
-                return __mk_code(INTERNAL_ERROR)
+            data = os.path.getsize(os.path.join(self.directory, filename))
+            response += f"{str(data)}{EOL}" 
 
         return response
 
@@ -115,20 +107,27 @@ class Connection(object):
         elif not self.filename_is_valid(filename):
             return __mk_code(INVALID_ARGUMENTS)
 
-        try:
-            offset = int(offset)
-            size = int(size)
-        except:
+        if not offset.isdecimal() or not size.isdecimal():
             return __mk_code(INVALID_ARGUMENTS)
 
-        # TODO
-        #elif fsize := os.path.get_size() offset < 0 or size < 0:
-        #    return __mk_code(INVALID_ARGUMENTS)
+        file_size = os.path.getsize(os.path.join(self.directory, filename))
+        offset = int(offset)
+        size = int(size)
 
+        if offset < 0 or file_size < offset + size:
+            return __mk_code(BAD_OFFSET)
 
-        with open(filename, "r") as f:
+        response = __mk_code(CODE_OK)
+        with open(filename, "rb") as f:
             f.seek(offset)
-            chunk = f.read(size).encode()
+
+            chunk = b""
+            remaining = size
+            while remaining:
+                bytes_read = f.read(remaining)
+                chunk += bytes_read
+                remaining -= len(bytes_read)
+
             b64_chunk = b64encode(chunk)
 
             response += f"{b64_chunk}{EOL}"
@@ -145,7 +144,7 @@ class Connection(object):
         return response 
     
 
-    def handle(self):
+    def handle(self) -> str:
         """
         Atiende eventos de la conexión hasta que termina.
         """
