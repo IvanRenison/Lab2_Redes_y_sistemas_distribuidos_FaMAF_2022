@@ -7,6 +7,7 @@
 # $Id: server.py 656 2013-03-18 23:49:11Z bc $
 
 import optparse
+import os
 import socket
 import connection
 import sys
@@ -24,6 +25,11 @@ class Server(object):
         print(f"Serving {directory} on {addr}:{port}.")
         # FALTA: Crear socket del servidor, configurarlo, asignarlo
         # a una dirección y puerto, etc.
+
+        # Chequear que el directorio existe
+        if not os.path.isdir(directory):
+            raise Exception(f"Directory {directory} does not exist.")
+
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.bind((addr, port))
 
