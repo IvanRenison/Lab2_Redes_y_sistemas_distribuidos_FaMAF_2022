@@ -68,7 +68,7 @@ class Connection(object):
         invalid_chars = set(filename) - VALID_CHARS
         return (len(invalid_chars) == 0)
 
-    def analizar_comando(self, command : list) -> str:
+    def analizar_comando(self, command : list):
         """
         Analiza el comando y ejecuta la función correspondiente
         """
@@ -115,7 +115,7 @@ class Connection(object):
             self.send(response)
 
 
-    def get_file_listing(self) -> str:
+    def get_file_listing(self):
         """
         Lista los archivos de un directorio
         """
@@ -128,7 +128,7 @@ class Connection(object):
         response += listing
         self.send(response)
     
-    def get_metadata(self, filename : str) -> str:
+    def get_metadata(self, filename : str):
         """
         Devuelve el tamaño del archivo dado en bytes 
         """
@@ -144,7 +144,7 @@ class Connection(object):
         self.send(response)
 
 
-    def get_slice(self, filename : str, offset : str, size : str) -> str:
+    def get_slice(self, filename : str, offset : str, size : str):
         if not self.file_exist(filename):
             response = __mk_code(FILE_NOT_FOUND)
             self.send(response)
@@ -220,7 +220,7 @@ class Connection(object):
             return ""
     
 
-    def handle(self) -> str:
+    def handle(self):
         """
         Atiende eventos de la conexión hasta que termina.
         """
@@ -244,7 +244,7 @@ class Connection(object):
        
 
 
-def __mk_code(self, code : int) -> str:
+def __mk_code(code : int) -> str:
     assert code in error_messages.keys()
 
     return f"{code} {error_messages[code]}"
