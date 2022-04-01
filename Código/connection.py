@@ -55,15 +55,11 @@ class Connection(object):
         """
         Cierra la conexión al cliente
         """
-        self.buffer_out = self.__mk_code(CODE_OK)
+        self.buffer_out = __mk_code(CODE_OK)
         self.send(self.buffer_out)
         self.connection_active = False
         print("Closing connection...")
         
-    def __mk_code(self, code : int) -> str:
-        assert code in error_messages.keys()
-
-        return f"{code} {error_messages[code]}"
 
     def file_exist(self, filename: str) -> bool:
         return os.path.isfile(os.path.join(self.directory, filename))
@@ -87,7 +83,7 @@ class Connection(object):
             if len(args_name) == 1:
                 self.get_file_listing()
             else:
-                self.buffer_out = self.__mk_code(INVALID_ARGUMENTS)
+                self.buffer_out = __mk_code(INVALID_ARGUMENTS)
                 self.send(self.buffer_out)
 
             
@@ -95,7 +91,7 @@ class Connection(object):
             if len(args_name) == 2:
                 self.get_metadata(args_name[1])
             else:
-                self.buffer_out = self.__mk_code(INVALID_ARGUMENTS)
+                self.buffer_out = __mk_code(INVALID_ARGUMENTS)
                 self.send(self.buffer_out)
 
             
@@ -103,7 +99,7 @@ class Connection(object):
             if len(args_name) == 4:
                 self.get_slice(args_name[1], args_name[2], args_name[3])
             else:
-                self.buffer_out = self.__mk_code(INVALID_ARGUMENTS)
+                self.buffer_out = __mk_code(INVALID_ARGUMENTS)
                 self.send(self.buffer_out)
 
             
@@ -111,12 +107,12 @@ class Connection(object):
             if len(args_name) == 1:
                 self.quit()
             else:
-                self.buffer_out = self.__mk_code(INVALID_ARGUMENTS)
+                self.buffer_out = __mk_code(INVALID_ARGUMENTS)
                 self.send(self.buffer_out)
 
         else:
             #comando desconocido
-            self.buffer_out = self.__mk_code(INVALID_COMMAND)
+            self.buffer_out = __mk_code(INVALID_COMMAND)
             self.send(self.buffer_out)
 
 
@@ -124,7 +120,7 @@ class Connection(object):
         """
         Lista los archivos de un directorio
         """
-        self.buffer_out = self.__mk_code(CODE_OK) + EOL
+        self.buffer_out = __mk_code(CODE_OK) + EOL
         listing = ''
 
         for dir in os.listdir(self.directory):
@@ -137,14 +133,14 @@ class Connection(object):
         """
         Devuelve el tamaño del archivo dado en bytes 
         """
-        self.buffer_out = self.__mk_code(CODE_OK) + EOL
+        self.buffer_out = __mk_code(CODE_OK) + EOL
 
         if not self.file_exist(filename):
-            self.buffer_out = self.__mk_code(FILE_NOT_FOUND)
+            self.buffer_out = __mk_code(FILE_NOT_FOUND)
             self.send(self.buffer_out)
 
         elif not self.filename_is_valid(filename):
-            self.buffer_out = self.__mk_code(INVALID_ARGUMENTS)
+            self.buffer_out = __mk_code(INVALID_ARGUMENTS)
             self.send(self.buffer_out)
 
         else:
@@ -155,15 +151,15 @@ class Connection(object):
 
     def get_slice(self, filename : str, offset : str, size : str) -> str:
         if not self.file_exist(filename):
-            self.buffer_out = self.__mk_code(FILE_NOT_FOUND)
+            self.buffer_out = __mk_code(FILE_NOT_FOUND)
             self.send(self.buffer_out)
 
         elif not self.filename_is_valid(filename):
-            self.buffer_out = self.__mk_code(INVALID_ARGUMENTS)
+            self.buffer_out = __mk_code(INVALID_ARGUMENTS)
             self.send(self.buffer_out)
 
         elif not offset.isdecimal() or not size.isdecimal():
-            self.buffer_out = self.__mk_code(INVALID_ARGUMENTS)
+            self.buffer_out = __mk_code(INVALID_ARGUMENTS)
             self.send(self.buffer_out)
 
         else: 
@@ -172,12 +168,12 @@ class Connection(object):
             size = int(size)
 
             if offset < 0 or file_size < offset + size:
-                self.buffer_out = self.__mk_code(BAD_OFFSET)
+                self.buffer_out = __mk_code(BAD_OFFSET)
                 self.send(self.buffer_out)
 
             else: 
                 pathname = os.path.join(self.directory, filename)
-                self.buffer_out = self.__mk_code(CODE_OK) 
+                self.buffer_out = __mk_code(CODE_OK) 
                 self.send(self.buffer_out)
                 with open(pathname, 'rb') as f:
                     f.seek(offset)
@@ -237,7 +233,7 @@ class Connection(object):
         while self.connection_active:
             response = self.read_line()
             if NEWLINE in response:
-                self.buffer_out = self.__mk_code(BAD_EOL)
+                self.buffer_out = __mk_code(BAD_EOL)
                 self.send(self.buffer_out)
                 self.connection_active = False
             elif len(response)>0:
@@ -246,13 +242,16 @@ class Connection(object):
                 except Exception:
                     print('INTERNAL SERVER ERROR')
                     print(traceback.format_exc())
-                    self.buffer_out = self.__mk_code(INTERNAL_ERROR)
+                    self.buffer_out = __mk_code(INTERNAL_ERROR)
                     self.send(self.buffer_out)
                     self.connection_active = False
         self.socket.close()
        
 
 
+def __mk_code(self, code : int) -> str:
+    assert code in error_messages.keys()
 
+    return f"{code} {error_messages[code]}"
 
 
