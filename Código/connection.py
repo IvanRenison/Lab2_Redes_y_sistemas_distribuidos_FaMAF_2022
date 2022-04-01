@@ -240,7 +240,7 @@ class Connection(object):
                 self.buffer_out = self.__mk_code(BAD_EOL)
                 self.send(self.buffer_out)
                 self.connection_active = False
-            else:
+            elif len(response)>0:
                 try:
                     self.analizar_comando(response)
                 except Exception:
