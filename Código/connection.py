@@ -239,7 +239,7 @@ class Connection(object):
             elif len(response)>0:
                 try:
                     self.analizar_comando(response)
-                except Exception:
+                except:
                     print('INTERNAL SERVER ERROR')
                     print(traceback.format_exc())
                     self.buffer_out = __mk_code(INTERNAL_ERROR)
