@@ -9,6 +9,9 @@ import socket
 from constants import *
 from base64 import b64encode
 import os
+import time
+import sys
+import traceback
 
 class Connection(object):
     """
@@ -22,165 +25,234 @@ class Connection(object):
         self.socket = socket
         self.directory = directory
         self.connection_active = True
+        self.buffer_in = ''
+        self.buffer_out = ''
+
+    def send(self, message, instance='Ascii', timeout=None):
+        """
+        Envía el mensaje 'message' al server, seguido por el terminador de
+        línea del protocolo.
+
+        Si se da un timeout, puede abortar con una excepción socket.timeout.
+
+        También puede fallar con otras excepciones de socket.
+        """
+        self.socket.settimeout(timeout)
+        if instance != 'Ascii':
+            message = b64encode(message)
+            while message:
+                bytes_sent = self.socket.send(message)
+                assert bytes_sent > 0
+                message = message[bytes_sent:]
+        else: 
+            message += EOL
+            while message:
+                bytes_sent = self.socket.send(message.encode("ascii"))
+                assert bytes_sent > 0
+                message = message[bytes_sent:]
+    
+    def quit(self) -> str:
+        """
+        Cierra la conexión al cliente
+        """
+        self.buffer_out = self.__mk_code(CODE_OK)
+        self.send(self.buffer_out)
+        self.connection_active = False
+        print("Closing connection...")
+        
+    def __mk_code(self, code : int) -> str:
+        assert code in error_messages.keys()
+
+        return f"{code} {error_messages[code]}"
 
     def file_exist(self, filename: str) -> bool:
-        
         return os.path.isfile(os.path.join(self.directory, filename))
     
     def filename_is_valid(self, filename : str) -> bool:
         
         invalid_chars = set(filename) - VALID_CHARS
-        return (invalid_chars == [])
+        return (len(invalid_chars) == 0)
 
-    def analizar_comando(self, command : str) -> str:
+    def analizar_comando(self, command : list) -> str:
         """
         Analiza el comando y ejecuta la función correspondiente
         """
 
         args_name = command.split()
         command_name = args_name[0]
+
+        print(f"Request: {command}")
         
         if command_name == 'get_file_listing':
             if len(args_name) == 1:
-                response = self.get_file_listing()
+                self.get_file_listing()
             else:
-                return __mk_code(INVALID_ARGUMENTS)
+                self.buffer_out = self.__mk_code(INVALID_ARGUMENTS)
+                self.send(self.buffer_out)
+
             
         elif command_name == 'get_metadata':
             if len(args_name) == 2:
-                response = self.get_metadata(args_name[1])
+                self.get_metadata(args_name[1])
             else:
-                return __mk_code(INVALID_ARGUMENTS)
+                self.buffer_out = self.__mk_code(INVALID_ARGUMENTS)
+                self.send(self.buffer_out)
+
             
         elif command_name == 'get_slice':
             if len(args_name) == 4:
-                response = self.get_slice(args_name[1], args_name[2], args_name[3])
+                self.get_slice(args_name[1], args_name[2], args_name[3])
             else:
-                return __mk_code(INVALID_ARGUMENTS)
+                self.buffer_out = self.__mk_code(INVALID_ARGUMENTS)
+                self.send(self.buffer_out)
+
             
         elif command_name == 'quit':
             if len(args_name) == 1:
-                return self.quit()
+                self.quit()
             else:
-                return __mk_code(INVALID_ARGUMENTS)
+                self.buffer_out = self.__mk_code(INVALID_ARGUMENTS)
+                self.send(self.buffer_out)
 
         else:
             #comando desconocido
-            return __mk_code(INVALID_COMMAND)
+            self.buffer_out = self.__mk_code(INVALID_COMMAND)
+            self.send(self.buffer_out)
 
-        return response
 
     def get_file_listing(self) -> str:
         """
         Lista los archivos de un directorio
         """
-        response = __mk_code(CODE_OK)
+        self.buffer_out = self.__mk_code(CODE_OK) + EOL
+        listing = ''
 
         for dir in os.listdir(self.directory):
-            response += f"{dir}{EOL}"
+            listing += f"{dir} {EOL}"
 
-        return response
+        self.buffer_out += listing
+        self.send(self.buffer_out)
     
     def get_metadata(self, filename : str) -> str:
         """
         Devuelve el tamaño del archivo dado en bytes 
         """
-        response = __mk_code(CODE_OK)
+        self.buffer_out = self.__mk_code(CODE_OK) + EOL
 
         if not self.file_exist(filename):
-            return __mk_code(FILE_NOT_FOUND)
+            self.buffer_out = self.__mk_code(FILE_NOT_FOUND)
+            self.send(self.buffer_out)
 
-        if not self.filename_is_valid(filename):
-            return __mk_code(INVALID_ARGUMENTS)
+        elif not self.filename_is_valid(filename):
+            self.buffer_out = self.__mk_code(INVALID_ARGUMENTS)
+            self.send(self.buffer_out)
 
         else:
             data = os.path.getsize(os.path.join(self.directory, filename))
-            response += f"{str(data)}{EOL}" 
+            self.buffer_out += f"{str(data)}" 
+            self.send(self.buffer_out)
 
-        return response
 
-    
     def get_slice(self, filename : str, offset : str, size : str) -> str:
-        if not self.filename_exists(filename):
-            return __mk_code(FILE_NOT_FOUND)
+        if not self.file_exist(filename):
+            self.buffer_out = self.__mk_code(FILE_NOT_FOUND)
+            self.send(self.buffer_out)
 
         elif not self.filename_is_valid(filename):
-            return __mk_code(INVALID_ARGUMENTS)
+            self.buffer_out = self.__mk_code(INVALID_ARGUMENTS)
+            self.send(self.buffer_out)
 
-        if not offset.isdecimal() or not size.isdecimal():
-            return __mk_code(INVALID_ARGUMENTS)
+        elif not offset.isdecimal() or not size.isdecimal():
+            self.buffer_out = self.__mk_code(INVALID_ARGUMENTS)
+            self.send(self.buffer_out)
 
-        file_size = os.path.getsize(os.path.join(self.directory, filename))
-        offset = int(offset)
-        size = int(size)
+        else: 
+            file_size = os.path.getsize(os.path.join(self.directory, filename))
+            offset = int(offset)
+            size = int(size)
 
-        if offset < 0 or file_size < offset + size:
-            return __mk_code(BAD_OFFSET)
+            if offset < 0 or file_size < offset + size:
+                self.buffer_out = self.__mk_code(BAD_OFFSET)
+                self.send(self.buffer_out)
 
-        response = __mk_code(CODE_OK)
-        with open(filename, "rb") as f:
-            f.seek(offset)
+            else: 
+                pathname = os.path.join(self.directory, filename)
+                self.buffer_out = self.__mk_code(CODE_OK) 
+                self.send(self.buffer_out)
+                with open(pathname, 'rb') as f:
+                    f.seek(offset)
 
-            chunk = b""
-            remaining = size
-            while remaining:
-                bytes_read = f.read(remaining)
-                chunk += bytes_read
-                remaining -= len(bytes_read)
+                    remaining = int(size)
+                    
+                    while remaining:
+                        bytes_read = f.read(remaining)
+                        remaining -= len(bytes_read)
+                        self.send(bytes_read, 'b64encode')
 
-            b64_chunk = b64encode(chunk)
-
-            response += f"{b64_chunk}{EOL}"
-
-        return response
-    
-    def quit(self) -> str:
+                    self.buffer_out = ''
+                    self.send(self.buffer_out)
+                    
+    def _recv(self, timeout=None):
         """
-        Cierra la conexión al cliente
+        Recibe datos y acumula en el buffer interno.
+
+        Para uso privado del server.
         """
-        response = __mk_code(CODE_OK)
-        self.connection_active = False
-        
-        return response 
+        self.socket.settimeout(timeout)
+        data = self.socket.recv(4096).decode("ascii")
+        self.buffer_in += data
+
+        if len(data) == 0:
+            self.connection_active = False
+
+    def read_line(self, timeout=None):
+        """
+        Espera datos hasta obtener una línea completa delimitada por el
+        terminador del protocolo.
+
+        Devuelve la línea, eliminando el terminaodr y los espacios en blanco
+        al principio y al final.
+        """
+        while not EOL in self.buffer_in and self.connection_active:
+            if timeout is not None:
+                t1 = time.process_time()
+            self._recv(timeout)
+            if timeout is not None:
+                t2 = time.process_time()
+                timeout -= t2 - t1
+                t1 = t2
+        if EOL in self.buffer_in:
+            request, self.buffer_in = self.buffer_in.split(EOL, 1)
+            return request.strip()
+        else:
+            self.connected = False
+            return ""
     
 
     def handle(self) -> str:
         """
         Atiende eventos de la conexión hasta que termina.
         """
-
-        # Maneja el envío y recepción de datos hasta la desconexión
-        buffer = ""
-
+        print(f"Connected by: {self.socket.getsockname()}")
         while self.connection_active:
-            while EOL not in buffer and len(buffer) < 4096:
-                rec = self.sock.recv(2048)
-                buffer += rec
-            
-            if len(buffer) >= 4096:
-                # El comando es muy largo, manejo de error de largo de comando
-                self.socket.send(__mk_code(BAD_REQUEST))
+            response = self.read_line()
+            if NEWLINE in response:
+                self.buffer_out = self.__mk_code(BAD_EOL)
+                self.send(self.buffer_out)
                 self.connection_active = False
             else:
-                request, buffer = buffer.split(EOL, 1)
-            
-                if NEWLINE in request:
-                    self.socket.send(__mk_code(BAD_EOL))
+                try:
+                    self.analizar_comando(response)
+                except Exception:
+                    print('INTERNAL SERVER ERROR')
+                    print(traceback.format_exc())
+                    self.buffer_out = self.__mk_code(INTERNAL_ERROR)
+                    self.send(self.buffer_out)
                     self.connection_active = False
-                else:
-                    try:
-                        response = self.analizar_comando(request)
-                    except:
-                        print('INTERNAL SERVER ERROR')
-                        response = __mk_code(INTERNAL_ERROR)
-                    self.socket.send(response)
         self.socket.close()
+       
 
 
 
-def __mk_code(code : int) -> str:
-    assert code in error_messages.keys()
-
-    return f"{code} {error_messages[code]}{EOL}"
 
 

@@ -28,7 +28,7 @@ class Server(object):
 
         # Chequear que el directorio existe
         if not os.path.isdir(directory):
-            raise Exception(f"Directory {directory} does not exist.")
+            os.mkdir(directory)
 
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.bind((addr, port))
