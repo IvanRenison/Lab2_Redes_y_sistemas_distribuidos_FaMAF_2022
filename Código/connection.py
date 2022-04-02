@@ -200,7 +200,7 @@ class Connection(object):
         Para uso privado del server.
         """
         self.socket.settimeout(timeout)
-        data = self.socket.recv(4096).decode("ascii")
+        data = self.socket.recv(4096).decode("ascii", errors = 'replace')
         self.buffer_in += data
 
         if len(data) == 0:
