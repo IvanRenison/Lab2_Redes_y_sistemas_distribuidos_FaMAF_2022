@@ -200,11 +200,19 @@ class Connection(object):
         Para uso privado del server.
         """
         self.socket.settimeout(timeout)
-        data = self.socket.recv(4096).decode("ascii", errors = 'replace')
-        self.buffer_in += data
+        try:
+            data = self.socket.recv(4096).decode("ascii")
+            self.buffer_in += data
 
-        if len(data) == 0:
+            if len(data) == 0:
+                self.connection_active = False
+    
+        except UnicodeError:
+            self.buffer_out = self.__mk_code(BAD_REQUEST)
+            self.send(self.buffer_out)
             self.connection_active = False
+            print("Closing connection...")
+
 
     def read_line(self, timeout=None):
         """
@@ -240,6 +248,7 @@ class Connection(object):
                 self.buffer_out = self.__mk_code(BAD_EOL)
                 self.send(self.buffer_out)
                 self.connection_active = False
+                print("Closing connection...")
             elif len(response)>0:
                 try:
                     self.analizar_comando(response)
@@ -249,4 +258,5 @@ class Connection(object):
                     self.buffer_out = self.__mk_code(INTERNAL_ERROR)
                     self.send(self.buffer_out)
                     self.connection_active = False
+                    print("Closing connection...")
         self.socket.close()
