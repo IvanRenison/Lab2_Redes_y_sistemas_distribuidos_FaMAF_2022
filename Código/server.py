@@ -11,6 +11,7 @@ import os
 import socket
 import connection
 import sys
+from _thread import *
 from constants import *
 
 
@@ -49,7 +50,7 @@ class Server(object):
             # Connection para la conexión y atenderla hasta que termine.
             conn_socket, addr = self.socket.accept()
             conn = connection.Connection(conn_socket, self.directory)
-            conn.handle()
+            start_new_thread(conn.handle, ())
 
 
 def main():
