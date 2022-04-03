@@ -36,7 +36,7 @@ class Server(object):
         self.socket = s
         self.directory = directory
 
-        
+
     def serve(self):
         """
         Loop principal del servidor. Se acepta una conexión a la vez
