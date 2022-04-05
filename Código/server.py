@@ -46,9 +46,9 @@ class Server(object):
         self.socket.listen()
 
         while True:
-            # FALTA: Aceptar una conexión al server, crear una
-            # Connection para la conexión y atenderla hasta que termine.
-            conn_socket, addr = self.socket.accept()
+            # Aceptar una conexión al server, crear una Connection para la
+            # conexión y atenderla hasta que termine.
+            conn_socket, _ = self.socket.accept()
             conn = connection.Connection(conn_socket, self.directory)
             start_new_thread(conn.handle, ())
 
