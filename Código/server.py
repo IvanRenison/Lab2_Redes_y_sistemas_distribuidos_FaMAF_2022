@@ -11,7 +11,7 @@ import os
 import socket
 import connection
 import sys
-from _thread import *
+from _thread import start_new_thread
 from constants import *
 
 

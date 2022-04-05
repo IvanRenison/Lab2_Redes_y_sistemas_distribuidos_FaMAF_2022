@@ -3,14 +3,10 @@
 # Copyright 2014 Carlos Bederián
 # $Id: connection.py 455 2011-05-01 00:32:09Z carlos $
 
-from lib2to3.pgen2.token import NEWLINE
-from select import EPOLLIN
 import socket
 from constants import *
 from base64 import b64encode
 import os
-import time
-import sys
 import traceback
 
 
