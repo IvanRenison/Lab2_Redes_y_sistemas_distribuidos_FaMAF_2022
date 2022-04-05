@@ -70,43 +70,25 @@ class Connection(object):
         Analiza el comando y ejecuta la función correspondiente
         """
 
-        args_name = command.split()
-        command_name = args_name[0]
+        args = command.split()
 
         print(f"Request: {command}")
 
-        if command_name == 'get_file_listing':
-            if len(args_name) == 1:
+        match args:
+            case ['get_file_listing']:
                 self.get_file_listing()
-            else:
-                response = mk_code(INVALID_ARGUMENTS)
-                self.send(response)
-
-        elif command_name == 'get_metadata':
-            if len(args_name) == 2:
-                self.get_metadata(args_name[1])
-            else:
-                response = mk_code(INVALID_ARGUMENTS)
-                self.send(response)
-
-        elif command_name == 'get_slice':
-            if len(args_name) == 4:
-                self.get_slice(args_name[1], args_name[2], args_name[3])
-            else:
-                response = mk_code(INVALID_ARGUMENTS)
-                self.send(response)
-
-        elif command_name == 'quit':
-            if len(args_name) == 1:
+            case ['get_metadata', filename]:
+                self.get_metadata(filename)
+            case ['get_slice', filename, offset, size]:
+                self.get_slice(filename, offset, size)
+            case ['quit']:
                 self.quit()
-            else:
+            case ['get_file_listing', *_] | ['get_metadata', *_] | ['get_slice', *_] | ['quit', *_]:
                 response = mk_code(INVALID_ARGUMENTS)
                 self.send(response)
-
-        else:
-            # comando desconocido
-            response = mk_code(INVALID_COMMAND)
-            self.send(response)
+            case _:
+                response = mk_code(INVALID_COMMAND)
+                self.send(response)
 
     def get_file_listing(self):
         """
