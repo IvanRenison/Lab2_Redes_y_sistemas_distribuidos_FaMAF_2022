@@ -98,12 +98,10 @@ class Connection(object):
         Lista los archivos de un directorio
         """
         response = mk_code(CODE_OK) + EOL
-        listing = ''
 
         for dir in os.listdir(self.directory):
-            listing += f"{dir} {EOL}"
+            response += f"{dir} {EOL}"
 
-        response += listing
         self.send(response)
 
     def get_metadata(self, filename: str):
