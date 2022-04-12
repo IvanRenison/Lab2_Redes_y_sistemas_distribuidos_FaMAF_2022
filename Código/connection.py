@@ -25,19 +25,16 @@ class Connection(object):
         self.buffer = ''
         print(f"Connected by: {self.socket.getsockname()}")
 
-    def send(self, message: bytes | str, instance='ascii', timeout=None):
+    def send(self, message: bytes | str, instance='ascii'):
         """
         Envía el mensaje 'message' al server, seguido por el terminador de
         línea del protocolo.
-
-        Si se da un timeout, puede abortar con una excepción socket.timeout.
 
         instance tiene que se 'ascii' o 'b64encode', si no falla con una excepción
         En caso de que sea 'ascii' agrega un '\\r\\n' al final
 
         También puede fallar con otras excepciones de socket.
         """
-        self.socket.settimeout(timeout)
         if instance == 'b64encode':
             message = b64encode(message)
         elif instance == 'ascii':
