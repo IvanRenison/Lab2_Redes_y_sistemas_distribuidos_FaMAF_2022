@@ -65,7 +65,7 @@ class Connection(object):
         invalid_chars = set(filename) - VALID_CHARS
         return (len(invalid_chars) == 0)
 
-    def analizar_comando(self, command: list):
+    def analizar_comando(self, command: str):
         """
         Analiza el comando y ejecuta la función correspondiente
         """
