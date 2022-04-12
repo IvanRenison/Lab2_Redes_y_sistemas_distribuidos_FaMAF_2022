@@ -37,13 +37,13 @@ class Connection(object):
         self.socket.settimeout(timeout)
         if instance != 'Ascii':
             message = b64encode(message)
-            while message:
+            while len(message) > 0:
                 bytes_sent = self.socket.send(message)
                 assert bytes_sent > 0
                 message = message[bytes_sent:]
         else:
             message += EOL
-            while message:
+            while len(message) > 0:
                 bytes_sent = self.socket.send(message.encode("ascii"))
                 assert bytes_sent > 0
                 message = message[bytes_sent:]
