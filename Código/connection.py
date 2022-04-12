@@ -75,12 +75,15 @@ class Connection(object):
         print(f"Request: {command}")
 
         match args:
+            # En cada caso, si los argumentos son cantidad y tipo correctos
+            # ejecuta la función correspondiente, que se encarga de enviar la
+            # respuesta
             case ['get_file_listing']:
                 self.get_file_listing()
             case ['get_metadata', filename]:
                 self.get_metadata(filename)
-            case ['get_slice', filename, offset, size]:
-                self.get_slice(filename, offset, size)
+            case ['get_slice', filename, offset, size] if offset.isdecimal() and size.isdecimal():
+                self.get_slice(filename, int(offset), int(size))
             case ['quit']:
                 self.quit()
             case ['get_file_listing', *_] | ['get_metadata', *_] | ['get_slice', *_] | ['quit', *_]:
@@ -122,7 +125,7 @@ class Connection(object):
             response += f"{str(data)}"
             self.send(response)
 
-    def get_slice(self, filename: str, offset: str, size: str):
+    def get_slice(self, filename: str, offset: int, size: int):
         if not self.file_exist(filename):
             response = mk_code(FILE_NOT_FOUND)
             self.send(response)
@@ -131,14 +134,8 @@ class Connection(object):
             response = mk_code(INVALID_ARGUMENTS)
             self.send(response)
 
-        elif not offset.isdecimal() or not size.isdecimal():
-            response = mk_code(INVALID_ARGUMENTS)
-            self.send(response)
-
         else:
             file_size = os.path.getsize(os.path.join(self.directory, filename))
-            offset = int(offset)
-            size = int(size)
 
             if offset < 0 or file_size < offset + size:
                 response = mk_code(BAD_OFFSET)
@@ -148,12 +145,12 @@ class Connection(object):
                 pathname = os.path.join(self.directory, filename)
                 response = mk_code(CODE_OK)
                 self.send(response)
-                with open(pathname, 'rb') as f:
+                with open(pathname, 'rb') as f:  # r = lectura, b = binario
                     f.seek(offset)
 
-                    remaining = int(size)
+                    remaining = size
 
-                    while remaining:
+                    while remaining > 0:
                         bytes_read = f.read(remaining)
                         remaining -= len(bytes_read)
                         self.send(bytes_read, 'b64encode')
@@ -220,6 +217,7 @@ class Connection(object):
                     self.connection_active = False
                     print("Closing connection...")
         self.socket.close()
+
 
 def mk_code(code: int) -> str:
     assert code in error_messages.keys()
