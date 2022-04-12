@@ -25,28 +25,32 @@ class Connection(object):
         self.buffer = ''
         print(f"Connected by: {self.socket.getsockname()}")
 
-    def send(self, message, instance='Ascii', timeout=None):
+    def send(self, message: bytes | str, instance='ascii', timeout=None):
         """
         Envía el mensaje 'message' al server, seguido por el terminador de
         línea del protocolo.
 
         Si se da un timeout, puede abortar con una excepción socket.timeout.
 
+        instance tiene que se 'ascii' o 'b64encode', si no falla con una excepción
+        En caso de que sea 'ascii' agrega un '\\r\\n' al final
+
         También puede fallar con otras excepciones de socket.
         """
         self.socket.settimeout(timeout)
-        if instance != 'Ascii':
+        if instance == 'b64encode':
             message = b64encode(message)
-            while len(message) > 0:
-                bytes_sent = self.socket.send(message)
-                assert bytes_sent > 0
-                message = message[bytes_sent:]
-        else:
+        elif instance == 'ascii':
             message += EOL
-            while len(message) > 0:
-                bytes_sent = self.socket.send(message.encode("ascii"))
-                assert bytes_sent > 0
-                message = message[bytes_sent:]
+            message = message.encode("ascii")
+        else:
+            # Nunca se deberia llamar a send con otra cosa
+            raise Exception(f"send: Invalid instance '{instance}'")
+
+        while len(message) > 0:
+            bytes_sent = self.socket.send(message)
+            assert bytes_sent > 0
+            message = message[bytes_sent:]
 
     def quit(self):
         """
@@ -151,7 +155,8 @@ class Connection(object):
                     while remaining > 0:
                         bytes_read = f.read(remaining)
                         remaining -= len(bytes_read)
-                        self.send(bytes_read, 'b64encode')
+                        self.send(bytes_read, instance='b64encode')
+                            # Los archivos se codifican con b64encode
 
                     response = ''
                     self.send(response)
