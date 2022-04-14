@@ -37,6 +37,13 @@ class Server(object):
         self.socket = s
         self.directory = directory
 
+        # Semaforo para limitar la cantidad de hilos
+        # Cada ves que se crea un hilo, el nuevo hilo adquire el semaforo
+        # y cuando termina, lo libera
+        # Idea sacada de
+        # https://stackoverflow.com/questions/1787397/how-do-i-limit-the-number-of-active-threads-in-python/5991741#5991741
+        self.threadLimiter = threading.BoundedSemaphore(MAX_THREADS)
+
 
     def serve(self):
         """
@@ -48,11 +55,21 @@ class Server(object):
         while True:
             # Aceptar una conexión al server, crear una Connection para la
             # conexión y atenderla hasta que termine.
-            if threading.active_count() <= MAX_THREADS:
-                conn_socket, _ = self.socket.accept()
-                conn = connection.Connection(conn_socket, self.directory)
-                thread = threading.Thread(None, conn.handle, ())
-                thread.start()
+            
+            conn_socket, _ = self.socket.accept()
+            conn = connection.Connection(conn_socket, self.directory)
+            thread = threading.Thread(target = (lambda: self.handle(conn)))
+            thread.start()
+    
+    def handle(self, connection: connection):
+        """
+        Función que para manejar un cliente. Debe ser llamada en un hilo nuevo.
+        """
+        self.threadLimiter.acquire()
+        try:
+            connection.handle()
+        finally:
+            self.threadLimiter.release()
 
 
 def main():
