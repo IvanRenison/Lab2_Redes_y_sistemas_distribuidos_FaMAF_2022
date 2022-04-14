@@ -11,7 +11,7 @@ import os
 import socket
 import connection
 import sys
-from _thread import start_new_thread
+import threading
 from constants import *
 
 
@@ -48,9 +48,11 @@ class Server(object):
         while True:
             # Aceptar una conexión al server, crear una Connection para la
             # conexión y atenderla hasta que termine.
-            conn_socket, _ = self.socket.accept()
-            conn = connection.Connection(conn_socket, self.directory)
-            start_new_thread(conn.handle, ())
+            if threading.active_count() <= MAX_THREADS:
+                conn_socket, _ = self.socket.accept()
+                conn = connection.Connection(conn_socket, self.directory)
+                thread = threading.Thread(None, conn.handle, ())
+                thread.start()
 
 
 def main():
