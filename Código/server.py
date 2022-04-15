@@ -58,19 +58,21 @@ class Server(object):
             
             conn_socket, _ = self.socket.accept()
             conn = connection.Connection(conn_socket, self.directory)
-            thread = threading.Thread(target = (lambda: self.handle(conn)))
-            thread.start()
+            self.handle(conn)
     
-    def handle(self, connection: connection):
+    def handle(self, conn: connection):
         """
-        Función que para manejar un cliente. Debe ser llamada en un hilo nuevo.
+        Función que para manejar un cliente.
         """
         self.threadLimiter.acquire()
-        try:
-            connection.handle()
-        finally:
-            self.threadLimiter.release()
-
+        def handler():
+            try:
+                conn.handle()
+            finally:
+                self.threadLimiter.release()
+        thread = threading.Thread(target = handler)
+        thread.start()
+        
 
 def main():
     """Parsea los argumentos y lanza el server"""
