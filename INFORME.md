@@ -6,14 +6,14 @@
     - Renison, Iván
     - Schachner, Álvaro
 
-## Estructura del Servidor
+## Estructura del servidor
 
 Una vez iniciado, el servidor realiza una escucha pasiva de requests mediante un socket.
 Al ser recibida y aceptada una request enviada por un cliente, se crea una conexión en un thread-pool con un máximo de `MAX_THREADS` conexiones simultáneas. Una ves que se crearon `MAX_THREADS` se acepta una conexión mas, pero no se la responde hasta que no se termina algún otra conexión, y a las nuevas conexiones que van llegando, el modulo `socket` se encarga de ponerlas en una cola.
 
-La comunicación entre cliente y servidor se realiza mediante el protocolo HFTP, que implementa distintos comandos previamente especificados. Cada mensaje se lee en chunks de 4096 bytes ascii hasta encontrarse con un terminador de línea '\r\n', todo lo que se encuentre después será considerado como un comando distinto.
+La comunicación entre cliente y servidor se realiza mediante el protocolo HFTP, que implementa distintos comandos previamente especificados. Cada mensaje se lee en chunks de 4096 bytes ascii hasta encontrarse con un terminador de línea `'\r\n'`, todo lo que se encuentre después será considerado como un comando distinto.
 
-Cada mensaje enviado por un cliente se guarda en un buffer de entrada, el cual se procesado cuando el mensaje es recibido en completitud. Luego de hacer las acciones apropiadas el servidor produce una respuesta adecuada al mensaje.
+Cada mensaje enviado por un cliente se guarda en un buffer de entrada, el cual es procesado cuando el mensaje es recibido en completitud (o sea, cuando llega el '`\r\n'`. Luego se hacen las acciones apropiadas para que el servidor produzca una respuesta adecuada al mensaje.
 
 ## Preguntas
 
